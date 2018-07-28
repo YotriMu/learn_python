@@ -1,0 +1,25 @@
+使用openpyxl模块
+
+一、官方文档
+	1.地址：http://openpyxl.readthedocs.io/en/stable/
+	2.范例
+		from openpyxl import Workbook
+		wb = Workbook()
+
+		# grab the active worksheet	获取活动工作表
+		ws = wb.active
+
+		# Data can be assigned directly to cells	数据可直接指派给单元格
+		ws['A1'] = 42
+
+		# Rows can also be appended可以按行添加
+		ws.append([1, 2, 3])
+
+		# Python types will automatically be converted	Python类型可以直接添加
+		import datetime
+		ws['A2'] = datetime.datetime.now()
+
+		# Save the file	保存文件
+		wb.save("sample.xlsx")
+	
+二、基本使用方法
