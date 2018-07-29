@@ -1,8 +1,45 @@
 使用openpyxl模块
 
 一、官方文档
-	1.地址：http://openpyxl.readthedocs.io/en/stable/
-	2.范例
+	（一）地址：http://openpyxl.readthedocs.io/en/stable/
+		1.操作workbook
+			（1）创建workbook
+				使用openpyxl模块时无需创建excel文件，直接导入Workbook类开始使用
+					>>> from openpyxl import Workbook
+					>>> wb = Workbook()
+				一个workbook总是创建至少一个worksheet，也可以这样用
+					openpyxl.workbook.Workbook.active()
+				ws = wb.active：这个函数使用的是_active_sheet_index属性，默认为0，不修改这个值时总是得到第一个worksheet。
+				也可以使用openpyxl.workbook.Workbook.create_sheet()方法创建新worksheet：
+					>>> ws1 = wb.create_sheet("Mysheet") # insert at the end (default)	默认在最后插入
+					# or
+					>>> ws2 = wb.create_sheet("Mysheet", 0) # insert at first position	在第一个位置插入
+				表单创建时会自动给一个名字，按顺序：Sheet1, Sheet2, Sheet3, ...，也可以在任何时间用title属性进行更改：
+					ws.title = "New Title"
+				默认工作表标签背景颜色时白色，可以用RRGGBB颜色代码设置sheet_properties.tabColor属性：
+					ws.sheet_properties.tabColor = "1072BA"
+				一旦给表单指定一个名字，可以将其作为key从workbook中获取
+				可以检视所有worksheet名字使用openpyxl.workbook.Workbook.sheetnames()属性。
+					print(wb.sheetnames)
+				也可以通过循环来获取：
+					for sheet in wb:
+						print(sheet.title)
+				可以使用openpyxl.workbook.Workbook.copy_worksheet()方法来创建worksheet副本：
+					# 仅单元（包括值、样式、超链接、注释）和特定的worksheet属性（包括大小、版式、和属性）被复制，其他的workbook/worksheet属性不会被复制，如：图像、图表
+					# 不能跨worksheet复制，也不能复制read-only或write-only模式下的worksheet
+					source = wb .active
+					target = wb.copy_worksheet(source)
+			2.同数据做游戏
+				（1）进入单元格
+					单元格可以直接通过工作表的关键字来进入
+						c = ws['A4']
+					返回A4位置的单元格，如果不存在的话创建一个，数值可以直接指派：
+						ws['A4] = 4
+					同样也由openpyxl.worksheet.Worksheet.cell()来实现，可以通过使用行和列注释类进入单元格：
+						# 当一个worksheet工作表在内存里创建，它是不包含cells的，仅当第一次进入是会被创建
+						d = ws.cell(row=4, column=2, value=10)
+					
+	（二）范例
 		from openpyxl import Workbook
 		import datetime
 		
