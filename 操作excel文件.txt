@@ -29,16 +29,103 @@
 					# 不能跨worksheet复制，也不能复制read-only或write-only模式下的worksheet
 					source = wb .active
 					target = wb.copy_worksheet(source)
-			2.同数据做游戏
+			2.数据操作
 				（1）进入单元格
 					单元格可以直接通过工作表的关键字来进入
 						c = ws['A4']
 					返回A4位置的单元格，如果不存在的话创建一个，数值可以直接指派：
 						ws['A4] = 4
 					同样也由openpyxl.worksheet.Worksheet.cell()来实现，可以通过使用行和列注释类进入单元格：
-						# 当一个worksheet工作表在内存里创建，它是不包含cells的，仅当第一次进入是会被创建
+						# 当一个worksheet工作表在内存里创建，它是不包含单元格的，仅当第一次进入是会被创建
 						d = ws.cell(row=4, column=2, value=10)
-					
+					警告：
+						因为这个特征，即使你不给他们指派一个值，浏览单元格也会在内存中创建单元格。例如：
+								# 这段代码会在内存里创建100*100的空单元格
+							>>> for i in range(1,101):
+							...        for j in range(1,101):
+							...            ws.cell(row=i, column=j)
+				（2）进入多个单元格
+					范围性的单元格可以由切片进入：
+						cell_range = ws['A1':'C2']
+					同样的，多行或多列也可通过类似方式取得：
+						# C列
+						cloC = ws['C']
+						# C列、D列
+						col_range = ws['C:D']
+						# 第10行
+						row10 = ws[10]
+						# 第5-10行
+						row_range = ws[5:10]
+					当然也可以用openpyxl.worksheet.Worksheet.iter_rows()或者openpyxl.worksheet.Worksheet.iter_cols()来获取：
+						# 最小行为1，最大列为3，最大行为2，结果为A1 B1 C1 A2 B2 C2
+						for row in ws.iter_rows(min_row=1, max_col=3, max_row=2):
+							for cell in row :
+								print(cell)
+						# 最小行为1，最大列为3，最大行为2，结果为A1 A2 B1 B2 C1 C2,注意同上面的结果进行区分
+						for col in ws.iter_cols(min_row=1, max_col=3, max_row=2):
+							for cell in col:
+								print(cell)
+					如果需要遍历所有行或列，可以用openpyxl.worksheet.Worksheet.rows()或openpyxl.worksheet.Worksheet.columns()
+				（3）数据存储
+					一旦得到了openpyxl.cell.Cell对象，我们就可以给它指定一个数值：
+						c.value = 'Hello, World'
+						print(c.value)
+					？？？也可启用类型和格式推断
+						# ???guess_types???
+						>>> wb = Workbook(guess_types=True)
+						>>> c.value = '12%'
+						>>> print(c.value)
+						0.12
+
+						>>> import datetime
+						>>> d.value = datetime.datetime.now()
+						>>> print d.value
+						datetime.datetime(2010, 9, 10, 22, 25, 18)
+
+						>>> c.value = '31.50'
+						>>> print(c.value)
+						31.5
+				（4）保存文件
+					最简单安全的方式是使用 openpyxl.workbook.Workbook.save()方法：
+						wb = Workbook()
+						wb.save('balances.xlsx')
+					！警告：
+						这个操作会覆盖现有文件并且不会由任何提示。
+					扩展名可以不是xlsx或xlsm，尽管你可能在打开的时候有些麻烦。因为OOXML文件是基于ZIP文件的，你可以一.zip作为扩展名并且用解压软件来打开。
+					可以指定template=True来将其保存为模板：
+						wb = load_workbook('document.xlsx')
+						wb.template = True
+						wb.save('document_template.xltx')
+					或者设置为False（默认）,保存成文档：
+						wb = load_workbook('document_template.xltx')
+						wb.template = False
+						wb.save('document.xlsx', as_template=False)
+					！警告：
+						你应该管理号自己的数据属性和文档扩展名，否则会出现用桌面软件无法打开的情况。下面这几种情况就会出错：
+							>>> wb = load_workbook('document.xlsx')
+							>>> # Need to save with the extension *.xlsx	需保存为.xlsx为扩展名
+							>>> wb.save('new_document.xlsm')
+							>>> # MS Excel can't open the document	微软Excel程序不能打开这个文档
+							>>>
+							>>> # or
+							>>>
+							>>> # Need specify attribute keep_vba=True	需指定keep_vba=True
+							>>> wb = load_workbook('document.xlsm')
+							>>> wb.save('new_document.xlsm')
+							>>> # MS Excel will not open the document	微软Excel程序不能打开这个文档
+							>>>
+							>>> # or
+							>>>
+							>>> wb = load_workbook('document.xltm', keep_vba=True)
+							>>> # If we need a template document, then we must specify extension as *.xltm.	如果需要一个模板文档，指定扩展名为xltm
+							>>> wb.save('new_document.xlsm')
+							>>> # MS Excel will not open the document
+				（5）加载文件
+					与写类似，可以导入openpyxl.load_workbook()来打开现有工作簿workbook:
+						>>> from openpyxl import load_workbook
+						>>> wb2 = load_workbook('test.xlsx')
+						>>> print wb2.get_sheet_names()
+						['Sheet2', 'New Title', 'Sheet1']
 	（二）范例
 		from openpyxl import Workbook
 		import datetime
