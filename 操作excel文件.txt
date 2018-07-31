@@ -29,103 +29,209 @@
 					# 不能跨worksheet复制，也不能复制read-only或write-only模式下的worksheet
 					source = wb .active
 					target = wb.copy_worksheet(source)
-			2.数据操作
-				（1）进入单元格
-					单元格可以直接通过工作表的关键字来进入
-						c = ws['A4']
-					返回A4位置的单元格，如果不存在的话创建一个，数值可以直接指派：
-						ws['A4] = 4
-					同样也由openpyxl.worksheet.Worksheet.cell()来实现，可以通过使用行和列注释类进入单元格：
-						# 当一个worksheet工作表在内存里创建，它是不包含单元格的，仅当第一次进入是会被创建
-						d = ws.cell(row=4, column=2, value=10)
-					警告：
-						因为这个特征，即使你不给他们指派一个值，浏览单元格也会在内存中创建单元格。例如：
-								# 这段代码会在内存里创建100*100的空单元格
-							>>> for i in range(1,101):
-							...        for j in range(1,101):
-							...            ws.cell(row=i, column=j)
-				（2）进入多个单元格
-					范围性的单元格可以由切片进入：
-						cell_range = ws['A1':'C2']
-					同样的，多行或多列也可通过类似方式取得：
-						# C列
-						cloC = ws['C']
-						# C列、D列
-						col_range = ws['C:D']
-						# 第10行
-						row10 = ws[10]
-						# 第5-10行
-						row_range = ws[5:10]
-					当然也可以用openpyxl.worksheet.Worksheet.iter_rows()或者openpyxl.worksheet.Worksheet.iter_cols()来获取：
-						# 最小行为1，最大列为3，最大行为2，结果为A1 B1 C1 A2 B2 C2
-						for row in ws.iter_rows(min_row=1, max_col=3, max_row=2):
-							for cell in row :
-								print(cell)
-						# 最小行为1，最大列为3，最大行为2，结果为A1 A2 B1 B2 C1 C2,注意同上面的结果进行区分
-						for col in ws.iter_cols(min_row=1, max_col=3, max_row=2):
-							for cell in col:
-								print(cell)
-					如果需要遍历所有行或列，可以用openpyxl.worksheet.Worksheet.rows()或openpyxl.worksheet.Worksheet.columns()
-				（3）数据存储
-					一旦得到了openpyxl.cell.Cell对象，我们就可以给它指定一个数值：
-						c.value = 'Hello, World'
-						print(c.value)
-					？？？也可启用类型和格式推断
-						# ???guess_types???
-						>>> wb = Workbook(guess_types=True)
-						>>> c.value = '12%'
-						>>> print(c.value)
-						0.12
+		2.数据操作
+			（1）进入单元格
+				单元格可以直接通过工作表的关键字来进入
+					c = ws['A4']
+				返回A4位置的单元格，如果不存在的话创建一个，数值可以直接指派：
+					ws['A4] = 4
+				同样也由openpyxl.worksheet.Worksheet.cell()来实现，可以通过使用行和列注释类进入单元格：
+					# 当一个worksheet工作表在内存里创建，它是不包含单元格的，仅当第一次进入是会被创建
+					d = ws.cell(row=4, column=2, value=10)
+				警告：
+					因为这个特征，即使你不给他们指派一个值，浏览单元格也会在内存中创建单元格。例如：
+							# 这段代码会在内存里创建100*100的空单元格
+						>>> for i in range(1,101):
+						...        for j in range(1,101):
+						...            ws.cell(row=i, column=j)
+			（2）进入多个单元格
+				范围性的单元格可以由切片进入：
+					cell_range = ws['A1':'C2']
+				同样的，多行或多列也可通过类似方式取得：
+					# C列
+					cloC = ws['C']
+					# C列、D列
+					col_range = ws['C:D']
+					# 第10行
+					row10 = ws[10]
+					# 第5-10行
+					row_range = ws[5:10]
+				当然也可以用openpyxl.worksheet.Worksheet.iter_rows()或者openpyxl.worksheet.Worksheet.iter_cols()来获取：
+					# 最小行为1，最大列为3，最大行为2，结果为A1 B1 C1 A2 B2 C2
+					for row in ws.iter_rows(min_row=1, max_col=3, max_row=2):
+						for cell in row :
+							print(cell)
+					# 最小行为1，最大列为3，最大行为2，结果为A1 A2 B1 B2 C1 C2,注意同上面的结果进行区分
+					for col in ws.iter_cols(min_row=1, max_col=3, max_row=2):
+						for cell in col:
+							print(cell)
+				如果需要遍历所有行或列，可以用openpyxl.worksheet.Worksheet.rows()或openpyxl.worksheet.Worksheet.columns()
+			（3）数据存储
+				一旦得到了openpyxl.cell.Cell对象，我们就可以给它指定一个数值：
+					c.value = 'Hello, World'
+					print(c.value)
+				？？？也可启用类型和格式推断
+					# ???guess_types???
+					>>> wb = Workbook(guess_types=True)
+					>>> c.value = '12%'
+					>>> print(c.value)
+					0.12
 
-						>>> import datetime
-						>>> d.value = datetime.datetime.now()
-						>>> print d.value
-						datetime.datetime(2010, 9, 10, 22, 25, 18)
+					>>> import datetime
+					>>> d.value = datetime.datetime.now()
+					>>> print d.value
+					datetime.datetime(2010, 9, 10, 22, 25, 18)
 
-						>>> c.value = '31.50'
-						>>> print(c.value)
-						31.5
-				（4）保存文件
-					最简单安全的方式是使用 openpyxl.workbook.Workbook.save()方法：
-						wb = Workbook()
-						wb.save('balances.xlsx')
-					！警告：
-						这个操作会覆盖现有文件并且不会由任何提示。
-					扩展名可以不是xlsx或xlsm，尽管你可能在打开的时候有些麻烦。因为OOXML文件是基于ZIP文件的，你可以一.zip作为扩展名并且用解压软件来打开。
-					可以指定template=True来将其保存为模板：
-						wb = load_workbook('document.xlsx')
-						wb.template = True
-						wb.save('document_template.xltx')
-					或者设置为False（默认）,保存成文档：
-						wb = load_workbook('document_template.xltx')
-						wb.template = False
-						wb.save('document.xlsx', as_template=False)
-					！警告：
-						你应该管理号自己的数据属性和文档扩展名，否则会出现用桌面软件无法打开的情况。下面这几种情况就会出错：
-							>>> wb = load_workbook('document.xlsx')
-							>>> # Need to save with the extension *.xlsx	需保存为.xlsx为扩展名
-							>>> wb.save('new_document.xlsm')
-							>>> # MS Excel can't open the document	微软Excel程序不能打开这个文档
-							>>>
-							>>> # or
-							>>>
-							>>> # Need specify attribute keep_vba=True	需指定keep_vba=True
-							>>> wb = load_workbook('document.xlsm')
-							>>> wb.save('new_document.xlsm')
-							>>> # MS Excel will not open the document	微软Excel程序不能打开这个文档
-							>>>
-							>>> # or
-							>>>
-							>>> wb = load_workbook('document.xltm', keep_vba=True)
-							>>> # If we need a template document, then we must specify extension as *.xltm.	如果需要一个模板文档，指定扩展名为xltm
-							>>> wb.save('new_document.xlsm')
-							>>> # MS Excel will not open the document
-				（5）加载文件
-					与写类似，可以导入openpyxl.load_workbook()来打开现有工作簿workbook:
-						>>> from openpyxl import load_workbook
-						>>> wb2 = load_workbook('test.xlsx')
-						>>> print wb2.get_sheet_names()
-						['Sheet2', 'New Title', 'Sheet1']
+					>>> c.value = '31.50'
+					>>> print(c.value)
+					31.5
+			（4）保存文件
+				最简单安全的方式是使用 openpyxl.workbook.Workbook.save()方法：
+					wb = Workbook()
+					wb.save('balances.xlsx')
+				！警告：
+					这个操作会覆盖现有文件并且不会由任何提示。
+				扩展名可以不是xlsx或xlsm，尽管你可能在打开的时候有些麻烦。因为OOXML文件是基于ZIP文件的，你可以一.zip作为扩展名并且用解压软件来打开。
+				可以指定template=True来将其保存为模板：
+					wb = load_workbook('document.xlsx')
+					wb.template = True
+					wb.save('document_template.xltx')
+				或者设置为False（默认）,保存成文档：
+					wb = load_workbook('document_template.xltx')
+					wb.template = False
+					wb.save('document.xlsx', as_template=False)
+				！警告：
+					你应该管理号自己的数据属性和文档扩展名，否则会出现用桌面软件无法打开的情况。下面这几种情况就会出错：
+						>>> wb = load_workbook('document.xlsx')
+						>>> # Need to save with the extension *.xlsx	需保存为.xlsx为扩展名
+						>>> wb.save('new_document.xlsm')
+						>>> # MS Excel can't open the document	微软Excel程序不能打开这个文档
+						>>>
+						>>> # or
+						>>>
+						>>> # Need specify attribute keep_vba=True	需指定keep_vba=True
+						>>> wb = load_workbook('document.xlsm')
+						>>> wb.save('new_document.xlsm')
+						>>> # MS Excel will not open the document	微软Excel程序不能打开这个文档
+						>>>
+						>>> # or
+						>>>
+						>>> wb = load_workbook('document.xltm', keep_vba=True)
+						>>> # If we need a template document, then we must specify extension as *.xltm.	如果需要一个模板文档，指定扩展名为xltm
+						>>> wb.save('new_document.xlsm')
+						>>> # MS Excel will not open the document
+			（5）加载文件
+				与写类似，可以导入openpyxl.load_workbook()来打开现有工作簿workbook:
+					>>> from openpyxl import load_workbook
+					>>> wb2 = load_workbook('test.xlsx')
+					>>> print wb2.get_sheet_names()
+					['Sheet2', 'New Title', 'Sheet1']
+		3.简单应用
+			（1）写工作簿
+				from openpyxl import Workbook
+				from openpyxl.utils import get_column_letter
+				# 创建workbook
+				wb = Workbook()
+				# 文件名
+				dest_filename = 'empty_book.xlsx'
+				# 获取第一个活动工作表，设置表单名
+				ws1 = wb.active
+				ws1.title = "range names"
+				# 1-40行添加0-600数字
+				for row in range(1, 40):
+					ws1.append(range(600))
+				# 创建第二个表单名字为Pi
+				ws2 = wb.create_sheet(title="Pi")
+				# 将F5单元格设置为3.14
+				ws2['F5'] = 3.14
+				# 创建第三个表单名字为Data，用列名填充第10-20行
+				ws3 = wb.create_sheet(title="Data")
+				for row in range(10, 20):
+					for col in range(27, 54):
+						ws3.cell(column=col, row=row, value="{0}".format(get_column_letter(col)))
+				print(ws3['AA10'].value)
+				# 保存文件
+				wb.save(filename=dest_filename)
+			（2）读工作簿
+				from openpyxl import load_workbook
+				# 加载指定文件名的工作簿
+				wb = load_workbook(filename='empty_book.xlsx')
+				# 获取指定名字的表单
+				sheet_ranges = wb['range names']
+				# 打印指定单元格内容
+				print(sheet_ranges['D18'].value)
+				注意：
+					有几个标志位可以在load_workbook时使用：
+						guess_types 可以启用或禁用（默认）读单元格时的类型推断。
+						data_only 控制了有单元格里的内容是公式（默认）还是数据。
+						keep_vba 控制VB元素保存还是不保存（默认），即使保存也是不可编辑的。
+				！警告：
+					openpyxl现阶段并不能获取所有Excel文件的内容，图片和图表如果打开保存为同一名字时会丢失。
+			（3）使用数字格式化
+				import datetime
+				from openpyxl import Workbook
+				wb = Workbook()
+				ws = wb.active
+				# set date using a Python datetime  设置日期使用Python datetime
+				ws['A1'] = datetime.datetime(2010, 7, 21)
+				print('Python datetime format: ' + ws['A1'].number_format)
+				# You can enable type inference on a case-by-case basis 也可启用类型推定
+				wb.guess_types = True
+				# set percentage using a string followed by the percent sign    使用百分数后面跟百分号
+				ws['B1'] = '3.14%'
+				wb.guess_types = False
+				print('This percentage is: ' + str(ws['B1'].value))
+				print('Percentage type inference is: ' + ws['B1'].number_format)
+			（4）使用公式
+				from openpyxl import Workbook
+				wb = Workbook()
+				ws = wb.active
+				# add a simple formula
+				ws["A1"] = "=SUM(1, 1)"
+				wb.save("formula.xlsx")
+				！警告
+					函数必须使用英文名，函数参数必须使用逗号分隔。
+				openpyxl不评估一个公式，但可以检验是不是公式：
+					>>> from openpyxl.utils import FORMULAE
+					>>> "HEX2DEC" in FORMULAE
+					True
+				如果你尝试使用一个公式但是不识别，可能是因为你用的公式不包含在初始规范内，这样的公式必须加前缀：_xlfn.才可以工作。
+			（5）合并、拆分单元格
+				from openpyxl.workbook import Workbook
+
+				wb = Workbook()
+				ws = wb.active
+
+				# 合并A2:D2单元格
+				ws.merge_cells('A2:D2')
+				# ws.unmerge_cells('A2:D2')
+
+				# or equivalently   等价于
+				# ws.merge_cells(start_row=2, start_column=1, end_row=4, end_column=4)
+				# ws.unmerge_cells(start_row=2, start_column=1, end_row=4, end_column=4)
+
+				wb.save('merge_book.xlsx')
+			（6）插入图像
+				from openpyxl import Workbook
+				from openpyxl.drawing.image import Image
+
+				wb = Workbook()
+				ws = wb.active
+				ws['A1'] = 'You should see image below'
+
+				# create an image   创建图片
+				img = Image('logo.png')
+
+				# B5是添加的左上角位置
+				ws.add_image(img, 'B5')
+				wb.save('image_book.xlsx')
+			（7）折叠列
+				import openpyxl
+				wb = openpyxl.Workbook()
+				ws = wb.active
+				# 折叠第A—D列
+				ws.column_dimensions.group('A', 'D', hidden=True)
+				wb.save('group.xlsx')
 	（二）范例
 		from openpyxl import Workbook
 		import datetime
