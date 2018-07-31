@@ -232,6 +232,81 @@
 				# 折叠第A—D列
 				ws.column_dimensions.group('A', 'D', hidden=True)
 				wb.save('group.xlsx')
+		4.同Pandas以及NumPy一起使用
+			（1）NumPy支持
+				openpyxl内建了对NumPy类型的浮点、整数以及布尔数的支持,DateTimes类型也可通过Pandas’ Timestamp类型予以支持。
+			（2）Pandas Dataframes
+				openpyxl.utils.dataframe.dataframe_to_rows()函数提供了与Pandas Dataframes一起使用的简单方法：
+					from openpyxl.utils.dataframe import dataframe_to_rows
+					from openpyxl import Workbook
+					from pandas import DataFrame
+
+					wb = Workbook()
+					ws = wb.active
+					# 左侧是索引abc，上面是行xyz，中间是数据123,456,789
+					# index为True时包含左侧索引，columns为True时包含上面行名称
+					df = DataFrame([[1,2,3], [4,5,6], [7,8,9]], index=['a', 'b', 'c'], columns=['x','y','z'])
+					for r in dataframe_to_rows(df, index=True, header=True):
+						ws.append(r)
+					wb.save('pandas_book.xlsx')
+				Pandas自身提供了转换到Excel的方法，这为客户端代码提供了额外的灵活性，包括将数据流直接流到文件的能力。
+				将数据文件转换为工作表，并且突出显示头和索引：
+					from openpyxl.utils.dataframe import dataframe_to_rows
+					from openpyxl import Workbook
+					from pandas import DataFrame
+
+					wb = Workbook()
+					ws = wb.active
+					# 左侧是索引abc，上面是行xyz，中间是数据123,456,789
+					# index为True时包含左侧索引，columns为True时包含上面行名称
+					df = DataFrame([[1,2,3], [4,5,6], [7,8,9]], index=['a', 'b', 'c'], columns=['x','y','z'])
+					for r in dataframe_to_rows(df, index=True, header=True):
+						ws.append(r)
+
+					for cell in ws['A'] + ws[1]:
+						# 设置单元格样式为Pandas
+						cell.style = 'Pandas'
+
+					wb.save("pandas_openpyxl.xlsx")
+				如果只想转换数据，可以使用只写模式：
+					from openpyxl.cell.cell import WriteOnlyCell
+					from openpyxl import Workbook
+					from pandas import DataFrame
+					from openpyxl.utils.dataframe import dataframe_to_rows
+
+					wb = Workbook(write_only=True)
+					ws = wb.create_sheet()
+
+					cell = WriteOnlyCell(ws)
+					cell.style = 'Pandas'
+
+					def format_first_row(row, cell):
+						for c in row:
+							cell.value = c
+							yield cell
+
+					df = DataFrame([[1,2,3], [4,5,6], [7,8,9]], index=['a', 'b', 'c'], columns=['x','y','z'])
+					rows = dataframe_to_rows(df)
+					first_row = format_first_row(next(rows), cell)
+					ws.append(first_row)
+
+					for row in rows:
+						row = list(row)
+						cell.value = row[0]
+						row[0] = cell
+						ws.append(row)
+
+					wb.save("openpyxl_stream.xlsx")
+				（3）将工作表转换为数据文件
+					若要将工作表转换为数据文件DataFrame，可以使用value属性。
+						df = DataFrame(ws.values)
+					如果工作表确实有标题或索引，比如使用Pandas创建的，那么就需要做略多的工作：
+						data = ws.values
+						cols = next(data)[1:]
+						data = list(data)
+						idx = [r[0] for r in data]
+						data = (islice(r, 1, None) for r in data)
+						df = DataFrame(data, index=idx, columns=cols)
 	（二）范例
 		from openpyxl import Workbook
 		import datetime
