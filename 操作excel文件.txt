@@ -297,16 +297,784 @@
 						ws.append(row)
 
 					wb.save("openpyxl_stream.xlsx")
-				（3）将工作表转换为数据文件
-					若要将工作表转换为数据文件DataFrame，可以使用value属性。
-						df = DataFrame(ws.values)
-					如果工作表确实有标题或索引，比如使用Pandas创建的，那么就需要做略多的工作：
-						data = ws.values
-						cols = next(data)[1:]
-						data = list(data)
-						idx = [r[0] for r in data]
-						data = (islice(r, 1, None) for r in data)
-						df = DataFrame(data, index=idx, columns=cols)
+			（3）将工作表转换为数据文件
+				若要将工作表转换为数据文件DataFrame，可以使用value属性。
+					df = DataFrame(ws.values)
+				如果工作表确实有标题或索引，比如使用Pandas创建的，那么就需要做略多的工作：
+					data = ws.values
+					cols = next(data)[1:]
+					data = list(data)
+					idx = [r[0] for r in data]
+					data = (islice(r, 1, None) for r in data)
+					df = DataFrame(data, index=idx, columns=cols)
+		5.图表Charts
+			（1）种类
+				A）Area Charts	面积图
+					A1）2D Area Charts 2D面积图
+						面积图与线图相类似，是将线图下面区域填充形成的，通过将分组设置为standard、stacked、percentStacked，可以获得不同的变体，其中standard为默认值。
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								AreaChart,
+								Reference,
+							)
+
+							wb = Workbook()
+							ws = wb.active
+
+							rows = [
+								['Number', 'Batch 1', 'Batch 2'],
+								[2, 40, 30],
+								[3, 40, 25],
+								[4, 50, 30],
+								[5, 30, 10],
+								[6, 25, 5],
+								[7, 50, 10],
+							]
+
+							for row in rows:
+								ws.append(row)
+
+							chart = AreaChart()
+							chart.title = 'Area Chart'
+							# style可以时1-48
+							chart.style = 1
+							chart.x_axis.title = "Test"
+							chart.y_axis.title = "Percentage"
+
+							# ata就是面积图的点，第2、3列2-7行的数字,但是图例会从第一组数据中提取，因此应该是1-7行
+							cat = Reference(ws, min_col=1, min_row=2, max_row =7)
+							# data就是面积图的点，第2、3列2-7行的数字
+							datas = Reference(ws, min_col=2, max_col=3, min_row=2, max_row=7)
+							chart.add_data(datas, titles_from_data=True)
+							chart.set_categories(cat)
+
+							ws.add_chart(chart, "A10")
+							wb.save("area.xlsx")
+					A2）3D Area Charts 3D面积图
+						还可以创建3D面积图
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								AreaChart3D,
+								Reference,
+							)
+
+							wb = Workbook()
+							ws = wb.active
+
+							rows = [
+								['Number', 'Batch 1', 'Batch 2'],
+								[2, 30, 40],
+								[3, 25, 40],
+								[4 ,30, 50],
+								[5 ,10, 30],
+								[6,  5, 25],
+								[7 ,10, 50],
+							]
+
+							for row in rows:
+								ws.append(row)
+
+							chart = AreaChart3D()
+							chart.title = "Area Chart"
+							chart.style = 13
+							chart.x_axis.title = 'Test'
+							chart.y_axis.title = 'Percentage'
+							chart.legend = None
+
+							cats = Reference(ws, min_col=1, min_row=1, max_row=7)
+							data = Reference(ws, min_col=2, min_row=1, max_col=3, max_row=7)
+							chart.add_data(data, titles_from_data=True)
+							chart.set_categories(cats)
+
+							ws.add_chart(chart, "A10")
+
+							wb.save("area3D.xlsx")
+				B）Bar and Column Charts	条形图和柱状图
+					B1)Vertical, Horizontal and Stacked Bar Charts	垂直、水平和堆积条形图
+						注意：将type设置为col或bar显示不同效果，当使用堆积图时overlap属性需要设置为100，如果为水平图，xy轴是相反的。
+							from openpyxl import Workbook
+							from openpyxl.chart import BarChart, Reference
+							from copy import deepcopy
+
+							wb = Workbook()
+							ws = wb.active
+
+							rows = [
+								('Number', 'Batch 1', 'Batch 2'),
+								(2, 10, 30),
+								(3, 40, 60),
+								(4, 50, 70),
+								(5, 20, 10),
+								(6, 10, 40),
+								(7, 50, 30),
+							]
+
+							for row in rows:
+								ws.append(row)
+
+							bar_chart = BarChart()
+							bar_chart.type = 'col'
+							bar_chart.style = 14
+							bar_chart.title = "Bar Chart"
+							bar_chart.x_axis.title = "Test number"
+							bar_chart.y_axis.title = "Sample length(mm)"
+
+							data = Reference(ws, min_col=2, min_row=1, max_col=3, max_row=7)
+							cat = Reference(ws, min_col=1, min_row=2, max_row=7)
+							bar_chart.add_data(data, titles_from_data=True)
+							bar_chart.set_categories(cat)
+							ws.add_chart(bar_chart, "A10")
+
+							hor_bar_chart = deepcopy(bar_chart)
+							hor_bar_chart.type = 'bar'
+							hor_bar_chart.title = "Horizontal Bar Chart"
+							ws.add_chart(hor_bar_chart, 'J10')
+
+							col_chart = deepcopy(bar_chart)
+							col_chart.type = 'col'
+							col_chart.grouping = 'stacked'
+							# Chart的overlap（重叠）属性必须设置为100，否则显示效果不好
+							col_chart.overlap = 100
+							col_chart.title = 'Stacked Chart'
+							ws.add_chart(col_chart, 'A25')
+
+							hor_col_chart = deepcopy(bar_chart)
+							hor_col_chart.type = 'bar'
+							hor_col_chart.grouping = 'stacked'
+							hor_col_chart.overlap = 100
+							hor_col_chart.title = 'Horizontal Stacked Chart'
+							ws.add_chart(hor_col_chart, 'J25')
+
+							wb.save("bar_stacked_chart.xlsx")
+					B2）3D Bar Chart 3D条形图
+						from openpyxl import Workbook
+						from openpyxl.chart import (
+							Reference,
+							Series,
+							BarChart3D,
+						)
+
+						wb = Workbook()
+						ws = wb.active
+
+						rows = [
+							(None, 2013, 2014),
+							("Apples", 5, 4),
+							("Oranges", 6, 2),
+							("Pears", 8, 3)
+						]
+
+						for row in rows:
+							ws.append(row)
+
+						data = Reference(ws, min_col=2, min_row=1, max_col=3, max_row=4)
+						titles = Reference(ws, min_col=1, min_row=2, max_row=4)
+						chart = BarChart3D()
+						chart.title = "3D Bar Chart"
+						chart.add_data(data=data, titles_from_data=True)
+						chart.set_categories(titles)
+
+						ws.add_chart(chart, "E5")
+						wb.save("bar3d.xlsx")
+				C）Bubble Charts	气泡图
+					气泡图类似于散点图，但使用第三维来确定气泡的大小。图表可以包括多个系列。
+						from openpyxl import Workbook
+						from openpyxl.chart import Series, Reference, BubbleChart
+
+						wb = Workbook()
+						ws = wb.active
+
+						rows = [
+							("Number of Products", "Sales in USD", "Market share"),
+							(14, 12200, 15),
+							(20, 60000, 33),
+							(18, 24400, 10),
+							(22, 32000, 42),
+							(),
+							(12, 8200, 18),
+							(15, 50000, 30),
+							(19, 22400, 15),
+							(25, 25000, 50),
+						]
+
+						for row in rows:
+							ws.append(row)
+
+						chart = BubbleChart()
+						chart.style = 42 # use a preset style
+
+						# add the first series of data  添加第1个系列的数据
+						# X轴用第1列数据
+						xvalues = Reference(ws, min_col=1, min_row=2, max_row=5)
+						# Y轴用第2列数据
+						yvalues = Reference(ws, min_col=2, min_row=2, max_row=5)
+						# 气泡大小用第3列数据
+						size = Reference(ws, min_col=3, min_row=2, max_row=5)
+						series = Series(values=yvalues, xvalues=xvalues, zvalues=size, title="2013")
+						chart.series.append(series)
+
+						# add the second    添加第2个系列的数据
+						xvalues = Reference(ws, min_col=1, min_row=7, max_row=10)
+						yvalues = Reference(ws, min_col=2, min_row=7, max_row=10)
+						size = Reference(ws, min_col=3, min_row=7, max_row=10)
+						series = Series(values=yvalues, xvalues=xvalues, zvalues=size, title="2014")
+						chart.series.append(series)
+
+						# place the chart starting in cell E1
+						ws.add_chart(chart, "E1")
+						wb.save("bubble.xlsx")
+				D）Line Charts	折线图
+					D1）折线图
+						线图允许数据对固定轴绘制。它们与散点图相似，主要区别在于，用线图对每个数据序列绘制相同的值。副轴可以使用不同种类的轴。
+						与条形图相似，有三种线形图：standard, stacked 和percentStacked。
+							from datetime import date
+
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								LineChart,
+								Reference,
+							)
+							from openpyxl.chart.axis import DateAxis
+
+							wb = Workbook()
+							ws = wb.active
+
+							rows = [
+								['Date', 'Batch 1', 'Batch 2', 'Batch 3'],
+								[date(2015,9, 1), 40, 30, 25],
+								[date(2015,9, 2), 40, 25, 30],
+								[date(2015,9, 3), 50, 30, 45],
+								[date(2015,9, 4), 30, 25, 40],
+								[date(2015,9, 5), 25, 35, 30],
+								[date(2015,9, 6), 20, 40, 35],
+							]
+
+							for row in rows:
+								ws.append(row)
+
+							c1 = LineChart()
+							c1.title = "Line Chart"
+							c1.style = 40
+							c1.y_axis.title = 'Size'
+							c1.x_axis.title = 'Test Number'
+
+							data = Reference(ws, min_col=2, min_row=1, max_col=4, max_row=7)
+							c1.add_data(data, titles_from_data=True)
+
+							# Style the lines
+							s1 = c1.series[0]
+							# 标志符号设置为三角
+							s1.marker.symbol = "triangle"
+							# 填充红色
+							s1.marker.graphicalProperties.solidFill = "FF0000" # Marker filling
+							# 线轮廓红色
+							s1.marker.graphicalProperties.line.solidFill = "FF00FF" # Marker outline
+
+							s1.graphicalProperties.line.noFill = True
+
+							s2 = c1.series[1]
+							s2.graphicalProperties.line.solidFill = "00AAAA"
+							s2.graphicalProperties.line.dashStyle = "sysDot"
+							s2.graphicalProperties.line.width = 100050 # width in EMUs
+
+							s2 = c1.series[2]
+							s2.smooth = True # Make the line smooth
+
+							ws.add_chart(c1, "A10")
+
+							from copy import deepcopy
+							stacked = deepcopy(c1)
+							stacked.grouping = "stacked"
+							stacked.title = "Stacked Line Chart"
+							ws.add_chart(stacked, "A27")
+
+							percent_stacked = deepcopy(c1)
+							percent_stacked.grouping = "percentStacked"
+							percent_stacked.title = "Percent Stacked Line Chart"
+							ws.add_chart(percent_stacked, "A44")
+
+							# Chart with date axis
+							c2 = LineChart()
+							c2.title = "Date Axis"
+							c2.style = 12
+							c2.y_axis.title = "Size"
+							c2.y_axis.crossAx = 500
+							c2.x_axis = DateAxis(crossAx=100)
+							c2.x_axis.number_format = 'd-mmm'
+							c2.x_axis.majorTimeUnit = "days"
+							c2.x_axis.title = "Date"
+
+							c2.add_data(data, titles_from_data=True)
+							dates = Reference(ws, min_col=1, min_row=2, max_row=7)
+							c2.set_categories(dates)
+
+							ws.add_chart(c2, "A61")
+
+							wb.save("line.xlsx")
+					D2）3D折线图
+						from datetime import date
+
+						from openpyxl import Workbook
+						from openpyxl.chart import (
+							LineChart3D,
+							Reference,
+						)
+						from openpyxl.chart.axis import DateAxis
+
+						wb = Workbook()
+						ws = wb.active
+
+						rows = [
+							['Date', 'Batch 1', 'Batch 2', 'Batch 3'],
+							[date(2015,9, 1), 40, 30, 25],
+							[date(2015,9, 2), 40, 25, 30],
+							[date(2015,9, 3), 50, 30, 45],
+							[date(2015,9, 4), 30, 25, 40],
+							[date(2015,9, 5), 25, 35, 30],
+							[date(2015,9, 6), 20, 40, 35],
+						]
+
+						for row in rows:
+							ws.append(row)
+
+						c1 = LineChart3D()
+						c1.title = "3D Line Chart"
+						c1.legend = None
+						c1.style = 15
+						c1.y_axis.title = 'Size'
+						c1.x_axis.title = 'Test Number'
+
+						data = Reference(ws, min_col=2, min_row=1, max_col=4, max_row=7)
+						c1.add_data(data, titles_from_data=True)
+
+						ws.add_chart(c1, "A10")
+
+						wb.save("line3D.xlsx")
+				E）Scatter Charts	散点图
+					散点图类似于一些线图，主要的区别是一系列的值被绘制为另一个值。这是有用的，因为值是无序的。
+						from openpyxl import Workbook
+						from openpyxl.chart import (
+							ScatterChart,
+							Reference,
+							Series,
+						)
+
+						wb = Workbook()
+						ws = wb.active
+
+						rows = [
+							['Size', 'Batch 1', 'Batch 2'],
+							[2, 40, 30],
+							[3, 40, 25],
+							[4, 50, 30],
+							[5, 30, 25],
+							[6, 25, 35],
+							[7, 20, 40],
+						]
+
+						for row in rows:
+							ws.append(row)
+
+						chart = ScatterChart()
+						chart.title = "Scatter Chart"
+						chart.style = 13
+						chart.x_axis.title = 'Size'
+						chart.y_axis.title = 'Percentage'
+
+						xvalues = Reference(ws, min_col=1, min_row=2, max_row=7)
+
+						values_1 = Reference(ws, min_col=2, min_row=1, max_row=7)
+						series_1 = Series(values_1, xvalues, title_from_data=True)
+						chart.series.append(series_1)
+
+						values_2 = Reference(ws, min_col=3, min_row=1, max_row=7)
+						series_2 = Series(values_2, xvalues, title_from_data=True)
+						chart.series.append(series_2)
+
+						ws.add_chart(chart, "A10")
+
+						wb.save("scatter.xlsx")
+				F）Pie Charts	饼图
+					F1）饼图
+						饼图将数据绘制成圆的切片，每个切片表示整个百分比。切片是顺时针方向从圆的顶部0°位置开始绘制。饼图只能获取一系列数据。图表的标题将默认为该系列的标题。
+							from openpyxl import Workbook
+
+							from openpyxl.chart import (
+								PieChart,
+								ProjectedPieChart,
+								Reference
+							)
+							from openpyxl.chart.series import DataPoint
+
+							data = [
+								['Pie', 'Sold'],
+								['Apple', 50],
+								['Cherry', 30],
+								['Pumpkin', 10],
+								['Chocolate', 40],
+							]
+
+							wb = Workbook()
+							ws = wb.active
+
+							for row in data:
+								ws.append(row)
+
+							pie = PieChart()
+							labels = Reference(ws, min_col=1, min_row=2, max_row=5)
+							data = Reference(ws, min_col=2, min_row=1, max_row=5)
+							pie.add_data(data, titles_from_data=True)
+							pie.set_categories(labels)
+							pie.title = "Pies sold by category"
+
+							# Cut the first slice out of the pie
+							slice = DataPoint(idx=0, explosion=20)
+							pie.series[0].data_points = [slice]
+
+							ws.add_chart(pie, "D1")
+
+
+							ws = wb.create_sheet(title="Projection")
+
+							data = [
+								['Page', 'Views'],
+								['Search', 95],
+								['Products', 4],
+								['Offers', 0.5],
+								['Sales', 0.5],
+							]
+
+							for row in data:
+								ws.append(row)
+
+							projected_pie = ProjectedPieChart()
+							projected_pie.type = "pie"
+							projected_pie.splitType = "val" # split by value
+							labels = Reference(ws, min_col=1, min_row=2, max_row=5)
+							data = Reference(ws, min_col=2, min_row=1, max_row=5)
+							projected_pie.add_data(data, titles_from_data=True)
+							projected_pie.set_categories(labels)
+
+							ws.add_chart(projected_pie, "A10")
+
+							from copy import deepcopy
+							projected_bar = deepcopy(projected_pie)
+							projected_bar.type = "bar"
+							projected_bar.splitType = 'pos' # split by position
+
+							ws.add_chart(projected_bar, "A27")
+
+							wb.save("pie.xlsx")
+					F2）投影饼图
+						投影饼图从饼图中提取一些切片，并将它们投影到第二饼图或条形图中。当数据系列中有几个较小的条目时，这是有用的。该图表可以按百分比、val（ue）或pos（ition）划分。如果没有设置，则应用程序决定使用哪一个。此外，可以自定义自定义分割。
+					F3）3D饼图
+						from openpyxl import Workbook
+
+						from openpyxl.chart import (
+							PieChart3D,
+							Reference
+						)
+
+						data = [
+							['Pie', 'Sold'],
+							['Apple', 50],
+							['Cherry', 30],
+							['Pumpkin', 10],
+							['Chocolate', 40],
+						]
+
+						wb = Workbook()
+						ws = wb.active
+
+						for row in data:
+							ws.append(row)
+
+						pie = PieChart3D()
+						labels = Reference(ws, min_col=1, min_row=2, max_row=5)
+						data = Reference(ws, min_col=2, min_row=1, max_row=5)
+						pie.add_data(data, titles_from_data=True)
+						pie.set_categories(labels)
+						pie.title = "Pies sold by category"
+
+
+						ws.add_chart(pie, "D1")
+
+						wb.save("pie3D.xlsx")
+				G）Doughnut Charts	环形图
+					环形图表类似于饼图，除了它们使用一个环而不是一个圆，还可以绘制几个系列的数据同心环。
+						from openpyxl import Workbook
+
+						from openpyxl.chart import (
+							DoughnutChart,
+							Reference,
+							Series,
+						)
+						from openpyxl.chart.series import DataPoint
+
+						data = [
+							['Pie', 2014, 2015],
+							['Plain', 40, 50],
+							['Jam', 2, 10],
+							['Lime', 20, 30],
+							['Chocolate', 30, 40],
+						]
+
+						wb = Workbook()
+						ws = wb.active
+
+						for row in data:
+							ws.append(row)
+
+						chart = DoughnutChart()
+						labels = Reference(ws, min_col=1, min_row=2, max_row=5)
+						data = Reference(ws, min_col=2, min_row=1, max_row=5)
+						chart.add_data(data, titles_from_data=True)
+						chart.set_categories(labels)
+						chart.title = "Doughnuts sold by category"
+						chart.style = 26
+
+						# Cut the first slice out of the doughnut
+						slices = [DataPoint(idx=i) for i in range(4)]
+						plain, jam, lime, chocolate = slices
+						chart.series[0].data_points = slices
+						plain.graphicalProperties.solidFill = "FAE1D0"
+						jam.graphicalProperties.solidFill = "BB2244"
+						lime.graphicalProperties.solidFill = "22DD22"
+						chocolate.graphicalProperties.solidFill = "61210B"
+						chocolate.explosion = 10
+
+						ws.add_chart(chart, "E1")
+
+						from copy import deepcopy
+
+						chart2 = deepcopy(chart)
+						chart2.title = None
+						data = Reference(ws, min_col=3, min_row=1, max_row=5)
+						series2 = Series(data, title_from_data=True)
+						series2.data_points = slices
+						chart2.series.append(series2)
+
+						ws.add_chart(chart2, "E17")
+
+						wb.save("doughnut.xlsx")
+				H）Radar Charts	雷达图
+					工作表中的列或行中排列的数据可以绘制在雷达图中。雷达图比较多个数据序列的总值。它实际上是圆形X轴上的面积图的投影
+					雷达图有两种类型：standard，其中区域用直线标示，并填充整个区域填充的地方。附加类型“marker”没有效果。如果需要标记，可以为相关系列设置这些标记。
+						from openpyxl import Workbook
+						from openpyxl.chart import (
+							RadarChart,
+							Reference,
+						)
+
+						wb = Workbook()
+						ws = wb.active
+
+						rows = [
+							['Month', "Bulbs", "Seeds", "Flowers", "Trees & shrubs"],
+							['Jan', 0, 2500, 500, 0,],
+							['Feb', 0, 5500, 750, 1500],
+							['Mar', 0, 9000, 1500, 2500],
+							['Apr', 0, 6500, 2000, 4000],
+							['May', 0, 3500, 5500, 3500],
+							['Jun', 0, 0, 7500, 1500],
+							['Jul', 0, 0, 8500, 800],
+							['Aug', 1500, 0, 7000, 550],
+							['Sep', 5000, 0, 3500, 2500],
+							['Oct', 8500, 0, 2500, 6000],
+							['Nov', 3500, 0, 500, 5500],
+							['Dec', 500, 0, 100, 3000 ],
+						]
+
+						for row in rows:
+							ws.append(row)
+
+						chart = RadarChart()
+						chart.type = "filled"
+						labels = Reference(ws, min_col=1, min_row=2, max_row=13)
+						data = Reference(ws, min_col=2, max_col=5, min_row=1, max_row=13)
+						chart.add_data(data, titles_from_data=True)
+						chart.set_categories(labels)
+						chart.style = 26
+						chart.title = "Garden Centre Sales"
+						chart.y_axis.delete = True
+
+						ws.add_chart(chart, "A17")
+
+						wb.save("radar.xlsx")
+				I）Stock Charts	股票图
+					在工作表中以特定顺序排列的列或行中的数据可以在股票图表中绘制。顾名思义，股票图表是用来说明股票价格波动的最常用的图表。然而，这张图表也可以用于科学数据。例如，你可以使用股票图表来指示每日或年度温度的波动。您必须按照正确的顺序组织数据以创建股票图表。
+					在工作表中组织库存图表数据是非常重要的。例如，为了创建一个简单的高、低收盘股票图表，您应该以高、低、关的顺序排列您的数据，进入标题。
+					虽然股票图表是一种不同的类型，但各种类型只是特定格式化选项的捷径：
+					高低闭合本质上是一个没有线的线图，标记设置为XYZ。它也使hiLoLines设置为True。打开高低点关闭是一个高低收盘图表与标记的每个数据点设置为XZZ和上行线。
+					可以通过将股票图表与条形图相结合来增加卷的体积。
+					from datetime import date
+
+					from openpyxl import Workbook
+
+					from openpyxl.chart import (
+						BarChart,
+						StockChart,
+						Reference,
+						Series,
+					)
+					from openpyxl.chart.axis import DateAxis, ChartLines
+					from openpyxl.chart.updown_bars import UpDownBars
+
+					wb = Workbook()
+					ws = wb.active
+
+					rows = [
+					   ['Date',      'Volume','Open', 'High', 'Low', 'Close'],
+					   ['2015-01-01', 20000,    26.2, 27.20, 23.49, 25.45,  ],
+					   ['2015-01-02', 10000,    25.45, 25.03, 19.55, 23.05, ],
+					   ['2015-01-03', 15000,    23.05, 24.46, 20.03, 22.42, ],
+					   ['2015-01-04', 2000,     22.42, 23.97, 20.07, 21.90, ],
+					   ['2015-01-05', 12000,    21.9, 23.65, 19.50, 21.51,  ],
+					]
+
+					for row in rows:
+						ws.append(row)
+
+					# High-low-close
+					c1 = StockChart()
+					labels = Reference(ws, min_col=1, min_row=2, max_row=6)
+					data = Reference(ws, min_col=4, max_col=6, min_row=1, max_row=6)
+					c1.add_data(data, titles_from_data=True)
+					c1.set_categories(labels)
+					for s in c1.series:
+						s.graphicalProperties.line.noFill = True
+					# marker for close
+					s.marker.symbol = "dot"
+					s.marker.size = 5
+					c1.title = "High-low-close"
+					c1.hiLowLines = ChartLines()
+
+					# Excel is broken and needs a cache of values in order to display hiLoLines :-/
+					from openpyxl.chart.data_source import NumData, NumVal
+					pts = [NumVal(idx=i) for i in range(len(data) - 1)]
+					cache = NumData(pt=pts)
+					c1.series[-1].val.numRef.numCache = cache
+
+					ws.add_chart(c1, "A10")
+
+					# Open-high-low-close
+					c2 = StockChart()
+					data = Reference(ws, min_col=3, max_col=6, min_row=1, max_row=6)
+					c2.add_data(data, titles_from_data=True)
+					c2.set_categories(labels)
+					for s in c2.series:
+						s.graphicalProperties.line.noFill = True
+					c2.hiLowLines = ChartLines()
+					c2.upDownBars = UpDownBars()
+					c2.title = "Open-high-low-close"
+
+					# add dummy cache
+					c2.series[-1].val.numRef.numCache = cache
+
+					ws.add_chart(c2, "G10")
+
+					# Create bar chart for volume
+
+					bar = BarChart()
+					data =  Reference(ws, min_col=2, min_row=1, max_row=6)
+					bar.add_data(data, titles_from_data=True)
+					bar.set_categories(labels)
+
+					from copy import deepcopy
+
+					# Volume-high-low-close
+					b1 = deepcopy(bar)
+					c3 = deepcopy(c1)
+					c3.y_axis.majorGridlines = None
+					c3.y_axis.title = "Price"
+					b1.y_axis.axId = 20
+					b1.z_axis = c3.y_axis
+					b1.y_axis.crosses = "max"
+					b1 += c3
+
+					c3.title = "High low close volume"
+
+					ws.add_chart(b1, "A27")
+
+					## Volume-open-high-low-close
+					b2 = deepcopy(bar)
+					c4 = deepcopy(c2)
+					c4.y_axis.majorGridlines = None
+					c4.y_axis.title = "Price"
+					b2.y_axis.axId = 20
+					b2.z_axis = c4.y_axis
+					b2.y_axis.crosses = "max"
+					b2 += c4
+
+					ws.add_chart(b2, "G27")
+
+					wb.save("stock.xlsx")
+				J）Surface charts	曲面图
+					工作表中的列或行中排列的数据可以绘制在曲面图中。当你想在两组数据之间找到最佳组合时，曲面图是有用的。如在地形图中，颜色和图案指示在相同的值范围内的区域。
+					默认情况下，所有的表面图都是3D的。2D线框和轮廓图是通过设置旋转和透视来创建的。
+						from openpyxl import Workbook
+						from openpyxl.chart import (
+							SurfaceChart,
+							SurfaceChart3D,
+							Reference,
+							Series,
+						)
+						from openpyxl.chart.axis import SeriesAxis
+
+						wb = Workbook()
+						ws = wb.active
+
+						data = [
+							[None, 10, 20, 30, 40, 50,],
+							[0.1, 15, 65, 105, 65, 15,],
+							[0.2, 35, 105, 170, 105, 35,],
+							[0.3, 55, 135, 215, 135, 55,],
+							[0.4, 75, 155, 240, 155, 75,],
+							[0.5, 80, 190, 245, 190, 80,],
+							[0.6, 75, 155, 240, 155, 75,],
+							[0.7, 55, 135, 215, 135, 55,],
+							[0.8, 35, 105, 170, 105, 35,],
+							[0.9, 15, 65, 105, 65, 15],
+						]
+
+						for row in data:
+							ws.append(row)
+
+
+						c1 = SurfaceChart()
+						ref = Reference(ws, min_col=2, max_col=6, min_row=1, max_row=10)
+						labels = Reference(ws, min_col=1, min_row=2, max_row=10)
+						c1.add_data(ref, titles_from_data=True)
+						c1.set_categories(labels)
+						c1.title = "Contour"
+
+						ws.add_chart(c1, "A12")
+
+						from copy import deepcopy
+
+						# wireframe
+						c2 = deepcopy(c1)
+						c2.wireframe = True
+						c2.title = "2D Wireframe"
+
+						ws.add_chart(c2, "G12")
+
+						# 3D Surface
+						c3 = SurfaceChart3D()
+						c3.add_data(ref, titles_from_data=True)
+						c3.set_categories(labels)
+						c3.title = "Surface"
+
+						ws.add_chart(c3, "A29")
+
+						c4 = deepcopy(c3)
+						c4.wireframe = True
+						c4.title = "3D Wireframe"
+
+						ws.add_chart(c4, "G29")
+
+						wb.save("surface.xlsx")
+				
 	（二）范例
 		from openpyxl import Workbook
 		import datetime
