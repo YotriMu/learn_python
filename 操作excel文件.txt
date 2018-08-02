@@ -1074,7 +1074,480 @@
 						ws.add_chart(c4, "G29")
 
 						wb.save("surface.xlsx")
-				
+			（2）创建图表
+				图表由至少一个或多个数据点组成的系列构成，系列本身是单元格引用组成。
+					>>> from openpyxl import Workbook
+					>>> wb = Workbook()
+					>>> ws = wb.active
+					>>> for i in range(10):
+					...     ws.append([i])
+					>>>
+					>>> from openpyxl.chart import BarChart, Reference, Series
+					>>> values = Reference(ws, min_col=1, min_row=1, max_col=1, max_row=10)
+					>>> chart = BarChart()
+					>>> chart.add_data(values)
+					>>> ws.add_chart(chart, "E15")
+					>>> wb.save("SampleChart.xlsx")
+				默认情况下，图表的左上角被锚定到单元格E15,图表大小为15*7.5厘米（大概是5列14行），可以通过设置图表的anchor、width和height属性来改变，实际尺寸依赖于操作系统和设备，其他锚点设置可以通过查看openpyxl.drawing.spreadsheet_drawing获取更多信息。
+			（3）坐标轴
+				A）Axis Limits and Scale	轴限和尺度
+					A1）Minima and Maxima	最小值和最大值
+						坐标轴最大最小值可以手工设定以在图表上显示特定范围。
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								ScatterChart,
+								Reference,
+								Series,
+							)
+
+							wb = Workbook()
+							ws = wb.active
+
+							ws.append(['X', '1/X'])
+							for x in range(-10, 11):
+								if x:
+									ws.append([x, 1.0 / x])
+
+							chart1 = ScatterChart()
+							chart1.title = "Full Axes"
+							chart1.x_axis.title = 'x'
+							chart1.y_axis.title = '1/x'
+							chart1.legend = None
+
+							chart2 = ScatterChart()
+							chart2.title = "Clipped Axes"
+							chart2.x_axis.title = 'x'
+							chart2.y_axis.title = '1/x'
+							chart2.legend = None
+
+							# X轴最小值设置为0，最大值11，Y轴最小值0，最大值1.5
+							chart2.x_axis.scaling.min = 0
+							chart2.y_axis.scaling.min = 0
+							chart2.x_axis.scaling.max = 11
+							chart2.y_axis.scaling.max = 1.5
+
+							x = Reference(ws, min_col=1, min_row=2, max_row=22)
+							y = Reference(ws, min_col=2, min_row=2, max_row=22)
+							s = Series(y, xvalues=x)
+							chart1.append(s)
+							chart2.append(s)
+
+							ws.add_chart(chart1, "C1")
+							ws.add_chart(chart2, "C15")
+
+							wb.save("minmax.xlsx")
+						在某些情况下，如所示的那样，设置轴限制实际上等效于显示数据的子范围。对于大型数据集，在使用Excel和OPEN/Libre Office中的数据子集而不是轴限制时，散点图的绘制（可能还有其他）将更快得多
+					A2）Logarithmic Scaling	对数标度
+						X轴和Y轴都可以对数缩放。对数的基可以设置为任何有效浮点。如果x轴按比例缩放，则该域中的负值将被丢弃。
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								ScatterChart,
+								Reference,
+								Series,
+							)
+							import math
+
+							wb = Workbook()
+							ws = wb.active
+
+							ws.append(['X', 'Gaussian'])
+							for i, x in enumerate(range(-10, 11)):
+								ws.append([x, "=EXP(-(($A${row}/6)^2))".format(row = i + 2)])
+
+							chart1 = ScatterChart()
+							chart1.title = "No Scaling"
+							chart1.x_axis.title = 'x'
+							chart1.y_axis.title = 'y'
+							chart1.legend = None
+
+							chart2 = ScatterChart()
+							chart2.title = "X Log Scale"
+							chart2.x_axis.title = 'x (log10)'
+							chart2.y_axis.title = 'y'
+							chart2.legend = None
+							chart2.x_axis.scaling.logBase = 10
+
+							chart3 = ScatterChart()
+							chart3.title = "Y Log Scale"
+							chart3.x_axis.title = 'x'
+							chart3.y_axis.title = 'y (log10)'
+							chart3.legend = None
+							chart3.y_axis.scaling.logBase = 10
+
+							chart4 = ScatterChart()
+							chart4.title = "Both Log Scale"
+							chart4.x_axis.title = 'x (log10)'
+							chart4.y_axis.title = 'y (log10)'
+							chart4.legend = None
+							chart4.x_axis.scaling.logBase = 10
+							chart4.y_axis.scaling.logBase = 10
+
+							chart5 = ScatterChart()
+							chart5.title = "Log Scale Base e"
+							chart5.x_axis.title = 'x (ln)'
+							chart5.y_axis.title = 'y (ln)'
+							chart5.legend = None
+							chart5.x_axis.scaling.logBase = math.e
+							chart5.y_axis.scaling.logBase = math.e
+
+							x = Reference(ws, min_col=1, min_row=2, max_row=22)
+							y = Reference(ws, min_col=2, min_row=2, max_row=22)
+							s = Series(y, xvalues=x)
+							chart1.append(s)
+							chart2.append(s)
+							chart3.append(s)
+							chart4.append(s)
+							chart5.append(s)
+
+							ws.add_chart(chart1, "C1")
+							ws.add_chart(chart2, "I1")
+							ws.add_chart(chart3, "C15")
+							ws.add_chart(chart4, "I15")
+							ws.add_chart(chart5, "F30")
+
+							wb.save("log.xlsx")
+					A3）Axis Orientation	轴取向
+						轴可以正常显示，也可以反向显示。坐标轴取向由scaling的orientation属性决定，设为minMax时为正常显示，maxMin时反向显示。
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								ScatterChart,
+								Reference,
+								Series,
+							)
+
+							wb = Workbook()
+							ws = wb.active
+
+							ws["A1"] = "Archimedean Spiral"
+							ws.append(["T", "X", "Y"])
+							for i, t in enumerate(range(100)):
+								ws.append([t / 16.0, "=$A${row}*COS($A${row})".format(row = i + 3),
+													 "=$A${row}*SIN($A${row})".format(row = i + 3)])
+
+							chart1 = ScatterChart()
+							chart1.title = "Default Orientation"
+							chart1.x_axis.title = 'x'
+							chart1.y_axis.title = 'y'
+							chart1.legend = None
+
+							chart2 = ScatterChart()
+							chart2.title = "Flip X"
+							chart2.x_axis.title = 'x'
+							chart2.y_axis.title = 'y'
+							chart2.legend = None
+							chart2.x_axis.scaling.orientation = "maxMin"
+							chart2.y_axis.scaling.orientation = "minMax"
+
+							chart3 = ScatterChart()
+							chart3.title = "Flip Y"
+							chart3.x_axis.title = 'x'
+							chart3.y_axis.title = 'y'
+							chart3.legend = None
+							chart3.x_axis.scaling.orientation = "minMax"
+							chart3.y_axis.scaling.orientation = "maxMin"
+
+							chart4 = ScatterChart()
+							chart4.title = "Flip Both"
+							chart4.x_axis.title = 'x'
+							chart4.y_axis.title = 'y'
+							chart4.legend = None
+							chart4.x_axis.scaling.orientation = "maxMin"
+							chart4.y_axis.scaling.orientation = "maxMin"
+
+							x = Reference(ws, min_col=2, min_row=2, max_row=102)
+							y = Reference(ws, min_col=3, min_row=2, max_row=102)
+							s = Series(y, xvalues=x)
+							chart1.append(s)
+							chart2.append(s)
+							chart3.append(s)
+							chart4.append(s)
+
+							ws.add_chart(chart1, "D1")
+							ws.add_chart(chart2, "J1")
+							ws.add_chart(chart3, "D15")
+							ws.add_chart(chart4, "J15")
+
+							wb.save("orientation.xlsx")
+					B）Adding a second axis	添加第二坐标轴
+						添加第二轴实际上涉及创建第二图表，该第二图表与第一图表共享共同的X轴，但具有单独的Y轴。
+							from openpyxl import Workbook
+							from openpyxl.chart import (
+								LineChart,
+								BarChart,
+								Reference,
+								Series,
+							)
+
+							wb = Workbook()
+							ws = wb.active
+
+							rows = [
+								['Aliens', 2, 3, 4, 5, 6, 7],
+								['Humans', 10, 40, 50, 20, 10, 50],
+							]
+
+							for row in rows:
+								ws.append(row)
+
+							c1 = BarChart()
+							v1 = Reference(ws, min_col=1, min_row=1, max_col=7)
+							c1.add_data(v1, titles_from_data=True, from_rows=True)
+
+							c1.x_axis.title = 'Days'
+							c1.y_axis.title = 'Aliens'
+							c1.y_axis.majorGridlines = None
+							c1.title = 'Survey results'
+
+
+							# Create a second chart
+							c2 = LineChart()
+							v2 = Reference(ws, min_col=1, min_row=2, max_col=7)
+							c2.add_data(v2, titles_from_data=True, from_rows=True)
+							c2.y_axis.axId = 200
+							c2.y_axis.title = "Humans"
+
+							# Display y-axis of the second chart on the right by setting it to cross the x-axis at its maximum
+							c1.y_axis.crosses = "max"
+							c1 += c2
+
+							ws.add_chart(c1, "D4")
+
+							wb.save("secondary.xlsx")
+				（4）Change the chart layout	改变图表布局
+					A)改变绘图区和图例的布局
+						画布内的图表布局可以使用布局属性作为布局类的实例来设置。
+						A1）图表布局
+							A11）尺寸和位置
+								图表可以定位在其容器内，X和Y调整位置，W和H调整大小，单位是容器的比例，图表不能位于容器的外部，宽度和高度是主要的约束条件：如果x+w＞1，则x＝1—W。X是水平位置，从左边Y是垂直位置，顶部H是图表相对于容器的高度W是盒子的宽度。
+							A12）模式
+								除了大小和位置之外，相关属性的模式也可以设置为factor 或edge。factor是默认的。
+									layout.xMode = edge
+							A13）Target	目标
+								布局目标可以被设置为outer或者inner,默认是outer。
+									layout.layoutTarget = inner
+						A2）Legend layout	图例布局
+							图例的位置可以通过设置其位置：r、l、t、b和tr分别控制，分别为r、l、t、b和tr。默认为R
+								legend.position = 'tr
+							或者手动布局：
+								legend.layout = ManualLayout()
+								from openpyxl import Workbook, load_workbook
+								from openpyxl.chart import ScatterChart, Series, Reference
+								from openpyxl.chart.layout import Layout, ManualLayout
+
+								wb = Workbook()
+								ws = wb.active
+
+								rows = [
+									['Size', 'Batch 1', 'Batch 2'],
+									[2, 40, 30],
+									[3, 40, 25],
+									[4, 50, 30],
+									[5, 30, 25],
+									[6, 25, 35],
+									[7, 20, 40],
+								]
+
+								for row in rows:
+									ws.append(row)
+
+								ch1 = ScatterChart()
+								xvalues = Reference(ws, min_col=1, min_row=2, max_row=7)
+								for i in range(2, 4):
+									values = Reference(ws, min_col=i, min_row=1, max_row=7)
+									series = Series(values, xvalues, title_from_data=True)
+									ch1.series.append(series)
+
+
+								ch1.title = "Default layout"
+								ch1.style = 13
+								ch1.x_axis.title = 'Size'
+								ch1.y_axis.title = 'Percentage'
+								ch1.legend.position = 'r'
+
+								ws.add_chart(ch1, "B10")
+
+								from copy import deepcopy
+
+								# Half-size chart, bottom right
+								ch2 = deepcopy(ch1)
+								ch2.title = "Manual chart layout"
+								ch2.legend.position = "tr"
+								ch2.layout=Layout(
+									manualLayout=ManualLayout(
+										x=0.25, y=0.25,
+										h=0.5, w=0.5,
+									)
+								)
+								ws.add_chart(ch2, "K10")
+
+								# Half-size chart, centred
+								ch3 = deepcopy(ch1)
+								ch3.layout = Layout(
+									ManualLayout(
+									x=0.25, y=0.25,
+									h=0.5, w=0.5,
+									xMode="edge",
+									yMode="edge",
+									)
+								)
+								ch3.title = "Manual chart layout, edge mode"
+								ws.add_chart(ch3, "B27")
+
+								# Manually position the legend bottom left
+								ch4 = deepcopy(ch1)
+								ch4.title = "Manual legend layout"
+								ch4.legend.layout = Layout(
+									manualLayout=ManualLayout(
+										yMode='edge',
+										xMode='edge',
+										x=0, y=0.9,
+										h=0.1, w=0.5
+									)
+								)
+
+								ws.add_chart(ch4, "K27")
+
+								wb.save("chart_layout.xlsx")
+						B)Styling charts	图表样式
+							A31）Adding Patterns	添加样式
+								整个数据序列和单个数据点可以通过图形属性被广泛地设计，把事情做得恰到好处可能需要一些时间。
+									from openpyxl import Workbook
+									from openpyxl.chart import BarChart, Reference
+									from openpyxl.chart.marker import DataPoint
+
+									from openpyxl.drawing.fill import PatternFillProperties, ColorChoice
+
+									wb = Workbook()
+									ws = wb.active
+
+									rows = [
+										("Sample",),
+										(1,),
+										(2,),
+										(3,),
+										(2,),
+										(3,),
+										(3,),
+										(1,),
+										(2,),
+									]
+
+									for r in rows:
+										ws.append(r)
+
+
+									c = BarChart()
+									data = Reference(ws, min_col=1, min_row=1, max_row=8)
+									c.add_data(data, titles_from_data=True)
+									c.title = "Chart with patterns"
+
+									# set a pattern for the whole series
+									series = c.series[0]
+									fill =  PatternFillProperties(prst="smConfetti")
+									fill.foreground = ColorChoice(prstClr="green")
+									fill.background = ColorChoice(prstClr="red")
+									series.graphicalProperties.pattFill = fill
+
+									# set a pattern for a 6th data point (0-indexed)
+									pt = DataPoint(idx=5)
+									pt.graphicalProperties.pattFill = PatternFillProperties(prst="ltHorz")
+									series.dPt.append(pt)
+
+									ws.add_chart(c, "C1")
+
+									wb.save("pattern.xlsx")
+						C）Advanced charts	高级图表
+							Gauge Charts
+								量表结合饼图和环形图来创建一个“量规”。第一张图是一张四片的甜甜圈图。前三片对应于量规的颜色；第四片是甜甜圈的一半，是不可见的。
+								添加了包含三个切片的饼图。第一片和第三片是看不见的，因此第二片可以作为量规上的针。
+								使用数据系列中的单个数据点的图形属性来完成效果。
+									from openpyxl import Workbook
+
+									from openpyxl.chart import PieChart, DoughnutChart, Series, Reference
+									from openpyxl.chart.series import DataPoint
+
+
+									data = [
+										["Donut", "Pie"],
+										[25, 75],
+										[50, 1],
+										[25, 124],
+										[100],
+									]
+
+									# based on http://www.excel-easy.com/examples/gauge-chart.html
+
+									wb = Workbook()
+									ws = wb.active
+									for row in data:
+										ws.append(row)
+
+									# First chart is a doughnut chart
+									c1 = DoughnutChart(firstSliceAng=270, holeSize=50)
+									c1.title = "Code coverage"
+									c1.legend = None
+
+									ref = Reference(ws, min_col=1, min_row=2, max_row=5)
+									s1 = Series(ref, title_from_data=False)
+
+									slices = [DataPoint(idx=i) for i in range(4)]
+									slices[0].graphicalProperties.solidFill = "FF3300" # red
+									slices[1].graphicalProperties.solidFill = "FCF305" # yellow
+									slices[2].graphicalProperties.solidFill = "1FB714" # green
+									slices[3].graphicalProperties.noFill = True # invisible
+
+									s1.data_points = slices
+									c1.series = [s1]
+
+									# Second chart is a pie chart
+									c2 = PieChart(firstSliceAng=270)
+									c2.legend = None
+
+									ref = Reference(ws, min_col=2, min_row=2, max_col=2, max_row=4)
+									s2 = Series(ref, title_from_data=False)
+
+									slices = [DataPoint(idx=i) for i in range(3)]
+									slices[0].graphicalProperties.noFill = True # invisible
+									slices[1].graphicalProperties.solidFill = "000000" # black needle
+									slices[2].graphicalProperties.noFill = True # invisible
+									s2.data_points = slices
+									c2.series = [s2]
+
+									c1 += c2 # combine charts
+
+									ws.add_chart(c1, "D1")
+
+									wb.save("gauge.xlsx")
+						D）Using chartsheets	使用图表页
+							图表是只包含图表的特殊工作表。图表的所有数据必须在不同的工作表上。
+								from openpyxl import Workbook
+
+								from openpyxl.chart import PieChart, Reference, Series
+
+								wb = Workbook()
+								ws = wb.active
+								cs = wb.create_chartsheet()
+
+								rows = [
+									["Bob", 3],
+									["Harry", 2],
+									["James", 4],
+								]
+
+								for row in rows:
+									ws.append(row)
+
+
+								chart = PieChart()
+								labels = Reference(ws, min_col=1, min_row=1, max_row=3)
+								data = Reference(ws, min_col=2, min_row=1, max_row=3)
+								chart.series = (Series(data),)
+								chart.title = "PieChart"
+
+								cs.add_chart(chart)
+
+								wb.save("demo.xlsx")
+					
 	（二）范例
 		from openpyxl import Workbook
 		import datetime
