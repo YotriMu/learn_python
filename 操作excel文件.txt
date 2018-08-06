@@ -1547,25 +1547,301 @@
 								cs.add_chart(chart)
 
 								wb.save("demo.xlsx")
-					
-	（二）范例
-		from openpyxl import Workbook
-		import datetime
-		
-		wb = Workbook()
-		
-		# grab the active worksheet	获取活动工作表
-		ws = wb.active
-		
-		# Data can be assigned directly to cells	数据可直接指派给单元格
-		ws['A1'] = 42
-		
-		# Rows can also be appended可以按行添加
-		ws.append([1, 2, 3])
-		
-		# Python types will automatically be converted	Python类型可以直接添加
-		ws['A2'] = datetime.datetime.now()
-		
-		# Save the file	保存文件
-		wb.save("sample.xlsx")
-二、基本使用方法
+		6.comments	评论
+			Openpyxl目前只支持读和写评论文本。格式化信息丢失。评论维度在阅读时丢失，但可以被写入。如果使用read_only=True，则当前不支持注释。
+				Adding a comment to a cell	向单元格添加注释
+					评论有attribute和author属性，两个必须都进行设置。
+					>>> from openpyxl import Workbook
+					>>> from openpyxl.comments import Comment
+					>>> wb = Workbook()
+					>>> ws = wb.active
+					>>> comment = ws["A1"].comment
+					>>> comment = Comment('This is the comment text', 'Comment Author')
+					>>> comment.text
+					'This is the comment text'
+					>>> comment.author
+					'Comment Author'
+			如果将相同的注释分配给多个单元格，openpyxl将自动创建副本。
+				>>> from openpyxl import Workbook
+				>>> from openpyxl.comments import Comment
+				>>> from openpyxl.utils import units
+				>>>
+				>>> wb=Workbook()
+				>>> ws=wb.active
+				>>>
+				>>> comment = Comment("Text", "Author")
+				>>> comment.width = 300
+				>>> comment.height = 50
+				>>>
+				>>> ws["A1"].comment = comment
+				>>>
+				>>> wb.save('commented_book.xlsx')
+			如果需要的话，openpyxl.utils.units包含用于从其他测量单位转换为毫米或点到像素的辅助函数：
+				>>> from openpyxl import Workbook
+				>>> from openpyxl.comments import Comment
+				>>> from openpyxl.utils import units
+				>>>
+				>>> wb=Workbook()
+				>>> ws=wb.active
+				>>>
+				>>> comment = Comment("Text", "Author")
+				>>> comment.width = units.points_to_pixels(300)
+				>>> comment.height = units.points_to_pixels(50)
+				>>>
+				>>> ws["A1"].comment = comment
+			加载和保存评论
+				加载时工作簿中的注释自动存储在各自的单元的注释属性中。格式化信息如字体大小、粗体和斜体丢失，注释库容器的原始尺寸和位置也一样。
+				保存时工作簿中剩余的注释将自动保存到工作簿文件中。
+				注释维度只能指定为只读。注释维度以像素为单位。
+		7.样式
+			（1）介绍
+				样式用来改变数据在屏幕上的显示效果，同样也可以觉定数字的形式。样式可以应用于以下几个方面：
+					字体设置大小、颜色、下划线等
+					填充设置图案或渐变
+					设置单元格边框
+					单元格对齐方式
+					保护
+				以下为默认设置:
+					>>> from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
+					>>> font = Font(name='Calibri',
+					...                 size=11,
+					...                 bold=False,
+					...                 italic=False,
+					...                 vertAlign=None,
+					...                 underline='none',
+					...                 strike=False,
+					...                 color='FF000000')
+					>>> fill = PatternFill(fill_type=None,
+					...                 start_color='FFFFFFFF',
+					...                 end_color='FF000000')
+					>>> border = Border(left=Side(border_style=None,
+					...                           color='FF000000'),
+					...                 right=Side(border_style=None,
+					...                            color='FF000000'),
+					...                 top=Side(border_style=None,
+					...                          color='FF000000'),
+					...                 bottom=Side(border_style=None,
+					...                             color='FF000000'),
+					...                 diagonal=Side(border_style=None,
+					...                               color='FF000000'),
+					...                 diagonal_direction=0,
+					...                 outline=Side(border_style=None,
+					...                              color='FF000000'),
+					...                 vertical=Side(border_style=None,
+					...                               color='FF000000'),
+					...                 horizontal=Side(border_style=None,
+					...                                color='FF000000')
+					...                )
+					>>> alignment=Alignment(horizontal='general',
+					...                     vertical='bottom',
+					...                     text_rotation=0,
+					...                     wrap_text=False,
+					...                     shrink_to_fit=False,
+					...                     indent=0)
+					>>> number_format = 'General'
+					>>> protection = Protection(locked=True,
+					...                         hidden=False)
+					>>>
+			（2）单元格样式和命名样式
+				有两种样式类型：单元格类型和命名类型（同样也被成为类型模板）。
+					A）单元格类型
+						单元格类型一旦分配后，可以在对象之间进行分享，并且不能再改变，这有效避免了很多的副作用，比如：改变喝多单元格样式，而不是只改变一个。
+							>>> from openpyxl.styles import colors
+							>>> from openpyxl.styles import Font, Color
+							>>> from openpyxl import Workbook
+							>>> wb = Workbook()
+							>>> ws = wb.active
+							>>>
+							>>> a1 = ws['A1']
+							>>> d4 = ws['D4']
+							>>> ft = Font(color=colors.RED)
+							>>> a1.font = ft
+							>>> d4.font = ft
+							>>>
+							>>> a1.font.italic = True # is not allowed 
+							>>>
+							>>> # If you want to change the color of a Font, you need to reassign it::
+							>>>
+							>>> a1.font = Font(color=colors.RED, italic=True) # the change only affects 
+					B）复制样式
+						样式也可以被复制
+							>>> from openpyxl.styles import Font
+							>>> from copy import copy
+							>>>
+							>>> ft1 = Font(name='Arial', size=14)
+							>>> ft2 = copy(ft1)
+							>>> ft2.name = "Tahoma"
+							>>> ft1.name
+							'Arial'
+							>>> ft2.name
+							'Tahoma'
+							>>> ft2.size # copied from the
+							14.0
+					C）基本字体颜色
+						颜色通常是RGB或ARGB。颜色模块包含一些方便的常量。
+							>>> from openpyxl.styles import Font
+							>>> from openpyxl.styles.colors import RED
+							>>> font = Font(color=RED)
+							>>> font = Font(color="FFBB00")
+						还支持对传统索引颜色以及主题和色调的支持。
+							>>> from openpyxl.styles.colors import Color
+							>>> c = Color(indexed=32)
+							>>> c = Color(theme=6, tint=0.5)
+					D）应用样式
+						样式直接应用于单元格。
+							>>> from openpyxl.workbook import Workbook
+							>>> from openpyxl.styles import Font, Fill
+							>>> wb = Workbook()
+							>>> ws = wb.active
+							>>> c = ws['A1']
+							>>> c.font = Font(size=12)
+						样式也可以应用于列和行，但请注意，这仅适用于在文件关闭后创建的（在Excel中）的单元格。如果要将样式应用于整个行和列，则必须自己将样式应用于每个单元格。这是对文件格式的限制：
+							>>> col = ws.column_dimensions['A']
+							>>> col.font = Font(bold=True)
+							>>> row = ws.row_dimensions[1]
+							>>> row.font = Font(underline="single")
+					E）合并单元格样式
+						有时，您希望格式化单元格的范围，就好像它们是单个对象一样。Excel通过合并单元格（删除所有但左上角的单元格）来假装这是可能的，然后重新创建它们以应用伪样式。
+						from openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment
+						from openpyxl import Workbook
+
+
+						def style_range(ws, cell_range, border=Border(), fill=None, font=None, alignment=None):
+							"""
+							Apply styles to a range of cells as if they were a single cell.
+
+							:param ws:  Excel worksheet instance
+							:param range: An excel range to style (e.g. A1:F20)
+							:param border: An openpyxl Border
+							:param fill: An openpyxl PatternFill or GradientFill
+							:param font: An openpyxl Font object
+							"""
+
+							top = Border(top=border.top)
+							left = Border(left=border.left)
+							right = Border(right=border.right)
+							bottom = Border(bottom=border.bottom)
+
+							first_cell = ws[cell_range.split(":")[0]]
+							if alignment:
+								ws.merge_cells(cell_range)
+								first_cell.alignment = alignment
+
+							rows = ws[cell_range]
+							if font:
+								first_cell.font = font
+
+							for cell in rows[0]:
+								cell.border = cell.border + top
+							for cell in rows[-1]:
+								cell.border = cell.border + bottom
+
+							for row in rows:
+								l = row[0]
+								r = row[-1]
+								l.border = l.border + left
+								r.border = r.border + right
+								if fill:
+									for c in row:
+										c.fill = fill
+
+						wb = Workbook()
+						ws = wb.active
+						my_cell = ws['B2']
+						my_cell.value = "My Cell"
+						thin = Side(border_style="thin", color="000000")
+						double = Side(border_style="double", color="ff0000")
+
+						border = Border(top=double, left=thin, right=thin, bottom=double)
+						fill = PatternFill("solid", fgColor="DDDDDD")
+						fill = GradientFill(stop=("000000", "FFFFFF"))
+						font = Font(b=True, color="FF0000")
+						al = Alignment(horizontal="center", vertical="center")
+
+
+						style_range(ws, 'B2:F4', border=border, fill=fill, font=font, alignment=al)
+						wb.save("styled.xlsx")
+					F）Edit Page Setup	页面设置
+						>>> from openpyxl.workbook import Workbook
+						>>>
+						>>> wb = Workbook()
+						>>> ws = wb.active
+						>>>
+						>>> ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+						>>> ws.page_setup.paperSize = ws.PAPERSIZE_TABLOID
+						>>> ws.page_setup.fitToHeight = 0
+						>>> ws.page_setup.fitToWidth = 1
+					G）Named Styles	命名样式
+						与单元格Styles相反，命名样式是可变的。当您想同时将格式化应用到许多不同的单元格时，它们是有意义的。NB（附注）。一旦将命名样式分配给单元格，样式的附加更改就不会影响单元格。
+						一旦命名样式已被注册到工作簿，就可以简单地通过名称来引用它。
+						G1）创建命名样式
+							>>> from openpyxl.styles import NamedStyle, Font, Border, Side
+							>>> highlight = NamedStyle(name="highlight")
+							>>> highlight.font = Font(bold=True, size=20)
+							>>> bd = Side(style='thick', color="000000")
+							>>> highlight.border = Border(left=bd, top=bd, right=bd, bottom=bd)
+							一旦创建了命名样式，它就可以在工作簿中注册
+							>>> ws['A1'].style = highlight
+							但命名样式也将在第一次被分配给一个单元时自动注册：
+							>>> ws['A1'].style = highlight
+							一旦注册，只使用名称分配样式：
+							>>> ws['D5'].style = 'highlight'
+						G2）应用内置样式
+							该规范包括一些内置样式，也可以使用。不幸的是，这些样式的名称存储在它们的本地化形式中。OpenPyxl将只识别英文名称，只与这里所写的完全一样。这些内容如下：
+							‘Normal’ # same as no style
+							Number formats
+							‘Comma’
+							‘Comma [0]’
+							‘Currency’
+							‘Currency [0]’
+							‘Percent’
+							Informative
+							‘Calculation’
+							‘Total’
+							‘Note’
+							‘Warning Text’
+							‘Explanatory Text’
+							Text styles
+							‘Title’
+							‘Headline 1’
+							‘Headline 2’
+							‘Headline 3’
+							‘Headline 4’
+							‘Hyperlink’
+							‘Followed Hyperlink’
+							‘Linked Cell’
+							Comparisons
+							‘Input’
+							‘Output’
+							‘Check Cell’
+							‘Good’
+							‘Bad’
+							‘Neutral’
+							Highlights
+							‘Accent1’
+							‘20 % - Accent1’
+							‘40 % - Accent1’
+							‘60 % - Accent1’
+							‘Accent2’
+							‘20 % - Accent2’
+							‘40 % - Accent2’
+							‘60 % - Accent2’
+							‘Accent3’
+							‘20 % - Accent3’
+							‘40 % - Accent3’
+							‘60 % - Accent3’
+							‘Accent4’
+							‘20 % - Accent4’
+							‘40 % - Accent4’
+							‘60 % - Accent4’
+							‘Accent5’
+							‘20 % - Accent5’
+							‘40 % - Accent5’
+							‘60 % - Accent5’
+							‘Accent6’
+							‘20 % - Accent6’
+							‘40 % - Accent6’
+							‘60 % - Accent6’
+							‘Pandas’
+		8.附加工作表属性
+			
