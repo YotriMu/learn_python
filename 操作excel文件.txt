@@ -1844,4 +1844,46 @@
 							‘60 % - Accent6’
 							‘Pandas’
 		8.附加工作表属性
-			
+			这些是特定行为的高级属性，最常用的是“FitTopage”页面设置属性和定义工作表标签的背景颜色的tabColor。
+			（1）可用的工作表属性
+				“enableFormatConditionsCalculation”
+				“filterMode”
+				“published”
+				“syncHorizontal”
+				“syncRef”
+				“syncVertical”
+				“transitionEvaluation”
+				“transitionEntry”
+				“tabColor”
+			（2）页面设置属性的可用字段		Available fields for page setup properties
+				“autoPageBreaks” “fitToPage”
+			（3）大纲可用字段	Available fields for outlines
+				“applyStyles”
+				“summaryBelow”
+				“summaryRight”
+				“showOutlineSymbols”
+			更多内容参见： http://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.sheetproperties%28v=office.14%29.aspx_
+			默认情况下，大纲属性被初始化，这样您就可以直接修改它们的4个属性中的每一个，而页面设置属性则不会。如果要修改后者，则应该首先初始化openpyxl.worksheet.properties.PageSetupProperties 对象具有所需的参数。一旦完成，他们可以直接修改后的程序，如果需要的话。
+				>>> from openpyxl.workbook import Workbook
+				>>> from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
+				>>>
+				>>> wb = Workbook()
+				>>> ws = wb.active
+				>>>
+				>>> wsprops = ws.sheet_properties
+				>>> wsprops.tabColor = "1072BA"
+				>>> wsprops.filterMode = False
+				>>> wsprops.pageSetUpPr = PageSetupProperties(fitToPage=True, autoPageBreaks=False)
+				>>> wsprops.outlinePr.summaryBelow = False
+				>>> wsprops.outlinePr.applyStyles = True
+				>>> wsprops.pageSetUpPr.autoPageBreaks = True
+		9.条件格式
+			Excel支持三种不同类型的条件格式化：内建、标准和自定义。内建将特定规则与预定义样式相结合。标准条件格式将特定规则与自定义格式化相结合。另外，可以使用自定义样式定义使用自定义样式的自定义公式。
+			不同规则的语法变化很大，openpyxl不可能知道规则是否有意义。
+			创建格式化规则的基本语法是：
+				>>> from openpyxl.formatting import Rule
+				>>> from openpyxl.styles import Font, PatternFill, Border
+				>>> from openpyxl.styles.differential import DifferentialStyle
+				>>> dxf = DifferentialStyle(font=Font(bold=True), fill=PatternFill(start_color='EE1111', end_color='EE1111'))
+				>>> rule = Rule(type='cellIs', dxf=dxf, formula=["10"])
+			因为某些规则的签名可以相当冗长，所以也有一些便利的工厂来创建它们。
